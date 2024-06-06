@@ -4,15 +4,17 @@ from PIL import Image
 import tensorflow as tf
 import requests
 import os
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import av
 
 # Page title
 st.set_page_config(page_title='Image Classification App', page_icon='🖼️')
 st.title('🖼️ Image Classification App')
 
-# Sidebar for accepting input image
-with st.sidebar:
-    st.header('Upload Image')
-    uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+# Sidebar for selecting input method
+input_method = st.sidebar.radio("Select input method", ("Upload Image", "Capture Image"))
+
+uploaded_image = None
 
 # URL of the model file
 model_url = 'https://github.com/adithyatg/image-checker/raw/master/Jelly_Msand.h5'  # Use the raw URL for direct download
@@ -62,11 +64,36 @@ def map_prediction_to_class(prediction):
     predicted_class = class_names[np.argmax(prediction)]
     return predicted_class, prediction[0][np.argmax(prediction)]
 
+# Capture image from webcam
+class VideoTransformer(VideoTransformerBase):
+    def __init__(self):
+        self.img = None
+
+    def transform(self, frame):
+        img = frame.to_image()
+        self.img = img
+        return av.VideoFrame.from_image(img)
+
+if input_method == "Upload Image":
+    with st.sidebar:
+        st.header('Upload Image')
+        uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+elif input_method == "Capture Image":
+    webrtc_ctx = webrtc_streamer(key="example", video_transformer_factory=VideoTransformer)
+    if webrtc_ctx.video_transformer:
+        img = webrtc_ctx.video_transformer.img
+        if img is not None:
+            uploaded_image = img
+
 # Display the uploaded image and prediction result
 if uploaded_image is not None:
-    # Load and display the uploaded image
-    img = Image.open(uploaded_image)
-    st.image(img, caption='Uploaded Image', use_column_width=True)
+    # If the image is from file uploader, open it using PIL
+    if isinstance(uploaded_image, bytes):
+        img = Image.open(uploaded_image)
+    else:
+        img = uploaded_image
+
+    st.image(img, caption='Selected Image', use_column_width=True)
     
     # Predict the image class
     prediction = predict(img)
