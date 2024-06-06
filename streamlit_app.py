@@ -56,12 +56,6 @@ def predict(image):
     prediction = model.predict(processed_image)
     return prediction
 
-# Map predictions to class names
-def map_prediction_to_class(prediction):
-    class_names = ['Jelly', 'Msand']
-    predicted_class = class_names[np.argmax(prediction)]
-    return predicted_class, prediction[0][np.argmax(prediction)]
-
 # Display the uploaded image and prediction result
 if uploaded_image is not None:
     # Load and display the uploaded image
@@ -70,9 +64,7 @@ if uploaded_image is not None:
     
     # Predict the image class
     prediction = predict(img)
-    predicted_class, probability = map_prediction_to_class(prediction)
     
     # Display the prediction result
     st.subheader('Prediction Result:')
-    st.write(f'Class: {predicted_class}')
-    st.write(f'Probability: {probability:.4f}')
+    st.write(prediction)
