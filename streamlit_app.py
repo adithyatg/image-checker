@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+import requests
+import os
 
 # Page title
 st.set_page_config(page_title='Image Classification App', page_icon='🖼️')
@@ -12,13 +14,27 @@ with st.sidebar:
     st.header('Upload Image')
     uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
+# URL of the model file
+model_url = 'https://github.com/adithyatg/image-checker/raw/master/Jelly_Msand.h5'  # Use the raw URL for direct download
+
+# Function to download the model file
+def download_model(url, filename):
+    if not os.path.exists(filename):
+        with st.spinner('Downloading model...'):
+            response = requests.get(url)
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+            st.success('Model downloaded successfully!')
+
 # Load pre-trained model
 @st.cache(allow_output_mutation=True)
-def load_model():
-    model = tf.keras.models.load_model('your_model.h5')  # Load your .h5 model file
+def load_model(url):
+    model_path = 'Jelly_Msand.h5'
+    download_model(url, model_path)
+    model = tf.keras.models.load_model(model_path)
     return model
 
-model = load_model()
+model = load_model(model_url)
 
 # Function to preprocess the image
 def preprocess_image(image):
